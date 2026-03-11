@@ -29,6 +29,17 @@
     .cmd-bar{animation:barSlide .2s ease-out}
     *:focus-visible{outline:2px solid #635bff;outline-offset:2px;border-radius:4px}
     th:focus-visible,td:focus-visible{border-radius:0}
+    .drag-handle{opacity:0;cursor:grab;transition:opacity .15s ease;color:#c1c9d2;display:flex;align-items:center;padding:0 2px}
+    .drag-handle:active{cursor:grabbing}
+    tr:hover .drag-handle,tr:focus-within .drag-handle{opacity:1}
+    tr[draggable=true]{cursor:default}
+    tr.dragging{opacity:.4}
+    .drag-over-top{box-shadow:inset 0 2px 0 #635bff}
+    .drag-over-bottom{box-shadow:inset 0 -2px 0 #635bff}
+    .grp-header{background:#f8f7ff;border-left:3px solid #635bff}
+    .grp-header:hover{background:#f3f1ff}
+    .grp-child{border-left:3px solid #e8e6ff}
+    .grp-child .grp-indent{padding-left:28px}
   </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -209,6 +220,12 @@ function parseCmd(raw){
     return{action:'paid',name,amount:amt};
   }
   if(/^(remove|delete)\s/i.test(t))return{action:'remove',name:t.replace(/^(remove|delete)\s+/i,'').replace(/\b(the|a|an)\b/gi,'').trim()};
+  if(/^group\s/i.test(t)){
+    const parts=t.replace(/^group\s+/i,'').split(/\s+with\s+/i);
+    if(parts.length===2)return{action:'group',nameA:parts[0].trim(),nameB:parts[1].trim()};
+    return{action:'unknown',text:t};
+  }
+  if(/^ungroup\s/i.test(t))return{action:'ungroup',name:t.replace(/^ungroup\s+/i,'').replace(/\b(the|a|an)\b/gi,'').trim()};
   if(/^(set|change|update)\s/i.test(t)){
     const amt=xAmt(t);const field=t.replace(/^(set|change|update)\s+/i,'').replace(/\s+(to|at)\s+.*/i,'').trim();
     return{action:'set',field,amount:amt};
@@ -230,11 +247,31 @@ function App(){
   const[fl,setFl]=useP('fl',{outstanding:250000,repay:25000});
   const[bl,setBl]=useP('bl',{amount:900000,rate:11,tenure:24});
   const[japan,setJapan]=useP('japan',400000);
+  const[groups,setGroups]=useP('groups',[]);
   const[showDataMenu,setShowDataMenu]=useState(false);
+  const[dragId,setDragId]=useState(null);
+  const[dropTarget,setDropTarget]=useState(null);
 
   const upd=(id,k,v)=>setItems(p=>p.map(i=>i.id===id?{...i,[k]:v}:i));
-  const rm=id=>{setItems(p=>p.filter(i=>i.id!==id));setDel(null)};
+  const rm=id=>{setItems(p=>p.filter(i=>i.id!==id));setDel(null);setGroups(g=>g.map(gr=>({...gr,itemIds:gr.itemIds.filter(x=>x!==id)})).filter(gr=>gr.itemIds.length>0))};
   const add=()=>{if(!nw.name.trim()||!nw.cost)return;const id=Math.max(0,...items.map(i=>i.id))+1;setItems(p=>[...p,{id,cat:nw.cat,name:nw.name.trim(),cost:Math.round(evalMath(nw.cost))||0,paid:Math.round(evalMath(nw.paid))||0,src:nw.src,notes:''}]);setNw({name:'',cost:'',paid:'',cat:'Other',src:''});setShowAdd(false)};
+
+  const groupOfItem=id=>groups.find(g=>g.itemIds.includes(id));
+  const createGroup=(idA,idB)=>{
+    const gid='g'+Date.now();
+    setGroups(p=>{
+      const clean=p.map(g=>({...g,itemIds:g.itemIds.filter(x=>x!==idA&&x!==idB)})).filter(g=>g.itemIds.length>0);
+      return[...clean,{id:gid,name:'New Group',itemIds:[idA,idB]}];
+    });
+  };
+  const addToGroup=(gid,itemId)=>{
+    setGroups(p=>p.map(g=>g.itemIds.includes(itemId)?{...g,itemIds:g.itemIds.filter(x=>x!==itemId)}:g).filter(g=>g.itemIds.length>0).map(g=>g.id===gid&&!g.itemIds.includes(itemId)?{...g,itemIds:[...g.itemIds,itemId]}:g));
+  };
+  const removeFromGroup=(gid,itemId)=>{
+    setGroups(p=>p.map(g=>g.id===gid?{...g,itemIds:g.itemIds.filter(x=>x!==itemId)}:g).filter(g=>g.itemIds.length>1));
+  };
+  const renameGroup=(gid,name)=>setGroups(p=>p.map(g=>g.id===gid?{...g,name}:g));
+  const dissolveGroup=gid=>setGroups(p=>p.filter(g=>g.id!==gid));
 
   const bankEmi=useMemo(()=>Math.round(calcEMI(bl.amount,bl.rate,bl.tenure)),[bl]);
   const fixedTotal=cf.rent+cf.sendHome+cf.homeLoanEmi+cf.living;
@@ -249,10 +286,29 @@ function App(){
   const filtered=useMemo(()=>{if(filter==='all')return items;return items.filter(i=>{if(filter==='paid')return i.paid>=i.cost;if(filter==='partial')return i.paid>0&&i.paid<i.cost;if(filter==='pending')return i.paid===0})},[items,filter]);
   const pct=t.b>0?t.p/t.b*100:0;
 
+  const filteredIds=useMemo(()=>new Set(filtered.map(i=>i.id)),[filtered]);
+  const tableRows=useMemo(()=>{
+    const groupedIds=new Set(groups.flatMap(g=>g.itemIds));
+    const rows=[];const emittedGroups=new Set();
+    filtered.forEach(item=>{
+      if(groupedIds.has(item.id)){
+        const g=groups.find(gr=>gr.itemIds.includes(item.id));
+        if(g&&!emittedGroups.has(g.id)){
+          emittedGroups.add(g.id);
+          const children=g.itemIds.map(id=>items.find(i=>i.id===id)).filter(Boolean).filter(i=>filteredIds.has(i.id));
+          if(children.length>0)rows.push({type:'group',group:g,children});
+        }
+      }else{
+        rows.push({type:'item',item});
+      }
+    });
+    return rows;
+  },[filtered,groups,items,filteredIds]);
+
   const exportCSV=()=>{const h='Item,Category,Cost,Paid,Pending,Source,Notes\n';const rows=items.map(i=>`"${i.name}","${i.cat}",${i.cost},${i.paid},${Math.max(0,i.cost-i.paid)},"${i.src}","${i.notes}"`).join('\n');const b=new Blob([h+rows],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='wedding-budget.csv';a.click()};
 
   const exportJSON=()=>{
-    const data={items,cf,fl,bl,japan,exportedAt:new Date().toISOString()};
+    const data={items,cf,fl,bl,japan,groups,exportedAt:new Date().toISOString()};
     const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`wedding-budget-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();
     setShowDataMenu(false);
@@ -262,14 +318,14 @@ function App(){
     inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{
       try{
         const d=JSON.parse(ev.target.result);
-        if(d.items)setItems(d.items);if(d.cf)setCf(d.cf);if(d.fl)setFl(d.fl);if(d.bl)setBl(d.bl);if(d.japan!=null)setJapan(d.japan);
+        if(d.items)setItems(d.items);if(d.cf)setCf(d.cf);if(d.fl)setFl(d.fl);if(d.bl)setBl(d.bl);if(d.japan!=null)setJapan(d.japan);if(d.groups)setGroups(d.groups);
         setShowDataMenu(false);alert('Data restored successfully');
       }catch(err){alert('Invalid backup file')}
     };r.readAsText(f)};inp.click();
   };
-  const resetData=()=>{if(confirm('Reset all data to initial values? This cannot be undone.')){setItems(SEED);setCf({income:180000,rent:17500,sendHome:10000,homeLoanEmi:16000,living:30000,sip:22000});setFl({outstanding:250000,repay:25000});setBl({amount:900000,rate:11,tenure:24});setJapan(400000);setShowDataMenu(false)}};
+  const resetData=()=>{if(confirm('Reset all data to initial values? This cannot be undone.')){setItems(SEED);setCf({income:180000,rent:17500,sendHome:10000,homeLoanEmi:16000,living:30000,sip:22000});setFl({outstanding:250000,repay:25000});setBl({amount:900000,rate:11,tenure:24});setJapan(400000);setGroups([]);setShowDataMenu(false)}};
 
-  const lastSaved=useMemo(()=>{try{return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}catch(e){return''}},[items,cf,fl,bl,japan]);
+  const lastSaved=useMemo(()=>{try{return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}catch(e){return''}},[items,cf,fl,bl,japan,groups]);
 
   /* ── Voice / Command Bar ── */
   const[cmdOpen,setCmdOpen]=useState(false);
@@ -313,7 +369,22 @@ function App(){
         if(k&&cmd.amount){setCf(p=>({...p,[fm[k]]:cmd.amount}));return{msg:`Set ${k} to ${fmt(cmd.amount)}`,ok:true}}
         return{msg:`Couldn't understand "${cmd.field}"`,ok:false};
       }
-      default:return{msg:`Try "add catering 50000" or "paid 30000 for venue"`,ok:false};
+      case'group':{
+        const a=findItem(cmd.nameA),b=findItem(cmd.nameB);
+        if(!a)return{msg:`Can't find "${cmd.nameA}"`,ok:false};
+        if(!b)return{msg:`Can't find "${cmd.nameB}"`,ok:false};
+        const eg=groupOfItem(b.id);
+        if(eg)addToGroup(eg.id,a.id);else createGroup(a.id,b.id);
+        return{msg:`Grouped "${a.name}" with "${b.name}"`,ok:true};
+      }
+      case'ungroup':{
+        const it=findItem(cmd.name);
+        if(it){const g=groupOfItem(it.id);if(g){removeFromGroup(g.id,it.id);return{msg:`Removed "${it.name}" from group`,ok:true}}}
+        const g=groups.find(g=>g.name.toLowerCase().includes(cmd.name.toLowerCase()));
+        if(g){dissolveGroup(g.id);return{msg:`Dissolved group "${g.name}"`,ok:true}}
+        return{msg:`Can't find "${cmd.name}"`,ok:false};
+      }
+      default:return{msg:`Try "add catering 50000" or "group X with Y"`,ok:false};
     }
   };
 
@@ -522,7 +593,8 @@ function App(){
         <div className="overflow-x-auto">
           <table className="w-full text-[14px]">
             <thead><tr style={{borderBottom:'1px solid rgba(50,50,93,.08)',backgroundColor:'#fafbfc'}}>
-              <th className="text-left font-medium py-3 pl-5 pr-3 text-[12px] uppercase tracking-[0.08em]" style={{color:'#8898aa'}}>Item</th>
+              <th className="w-6 py-3 pl-2"></th>
+              <th className="text-left font-medium py-3 pl-1 pr-3 text-[12px] uppercase tracking-[0.08em]" style={{color:'#8898aa'}}>Item</th>
               <th className="text-left font-medium py-3 px-3 text-[12px] uppercase tracking-[0.08em] hidden sm:table-cell" style={{color:'#8898aa'}}>Category</th>
               <th className="text-right font-medium py-3 px-3 text-[12px] uppercase tracking-[0.08em]" style={{color:'#8898aa'}}>Cost</th>
               <th className="text-right font-medium py-3 px-3 text-[12px] uppercase tracking-[0.08em]" style={{color:'#8898aa'}}>Paid</th>
@@ -530,9 +602,98 @@ function App(){
               <th className="text-left font-medium py-3 px-3 text-[12px] uppercase tracking-[0.08em] hidden lg:table-cell" style={{color:'#8898aa'}}>Source</th>
               <th className="py-3 pr-5 pl-3 w-8"></th>
             </tr></thead>
-            <tbody>{filtered.map(item=>{const pend=Math.max(0,item.cost-item.paid);const done=item.paid>=item.cost;const partial=item.paid>0&&item.paid<item.cost;
-              return<tr key={item.id} className={`group ${done?'row-done':'hover:bg-[#f6f9fc]'}`} style={{borderBottom:'1px solid rgba(50,50,93,.06)',transition:'background .15s ease'}}>
-                <td className="py-3.5 pl-5 pr-3">
+            <tbody>
+            {tableRows.map(row=>{
+              if(row.type==='group'){
+                const g=row.group,ch=row.children;
+                const gc=ch.reduce((s,i)=>s+i.cost,0),gp=ch.reduce((s,i)=>s+i.paid,0),gpend=gc-gp;
+                const gDone=gp>=gc&&gc>0;
+                return<React.Fragment key={g.id}>
+                  <tr className="grp-header"
+                    onDragOver={e=>{e.preventDefault();setDropTarget({type:'group',id:g.id})}}
+                    onDragLeave={()=>setDropTarget(null)}
+                    onDrop={e=>{e.preventDefault();if(dragId){addToGroup(g.id,dragId);setDragId(null);setDropTarget(null)}}}
+                    style={{borderBottom:'1px solid rgba(99,91,255,.12)',transition:'background .15s ease',
+                      boxShadow:dropTarget?.type==='group'&&dropTarget.id===g.id?'inset 0 0 0 2px #635bff':'none'}}>
+                    <td className="py-3 pl-2"><span className="drag-handle" style={{opacity:.3}}>
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="3" r="1.2"/><circle cx="11" cy="3" r="1.2"/><circle cx="5" cy="8" r="1.2"/><circle cx="11" cy="8" r="1.2"/><circle cx="5" cy="13" r="1.2"/><circle cx="11" cy="13" r="1.2"/></svg>
+                    </span></td>
+                    <td className="py-3 pl-1 pr-3">
+                      <div className="flex items-center gap-2">
+                        <svg viewBox="0 0 20 20" fill="#635bff" className="w-[16px] h-[16px] shrink-0"><path d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"/></svg>
+                        <E value={g.name} onSave={v=>renameGroup(g.id,v)} cls="font-semibold text-[14px]" ph="Group name"/>
+                        <span className="text-[12px] font-medium px-2 py-0.5 rounded-full" style={{color:'#635bff',backgroundColor:'#ededff'}}>{ch.length} items</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 hidden sm:table-cell"></td>
+                    <td className="text-right py-3 px-3 tabular-nums font-semibold" style={{color:'#0a2540'}}>{fmt(gc)}</td>
+                    <td className="text-right py-3 px-3 tabular-nums font-semibold" style={{color:'#0ea47a'}}>{fmt(gp)}</td>
+                    <td className="text-right py-3 px-3 tabular-nums font-semibold">{gDone
+                      ?<span className="inline-flex items-center gap-1 text-[12px] font-semibold px-2.5 py-0.5 rounded-full" style={{color:'#0ea47a',backgroundColor:'#ecfdf5'}}>Cleared</span>
+                      :<span style={{color:'#df1b41'}}>{fmt(gpend)}</span>}</td>
+                    <td className="py-3 px-3 hidden lg:table-cell"></td>
+                    <td className="py-3 pr-5 pl-3 text-right">
+                      <button onClick={()=>dissolveGroup(g.id)} className="text-[12px] font-medium transition hover:opacity-80" style={{color:'#8898aa'}} aria-label={`Ungroup ${g.name}`} title="Ungroup">
+                        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.28 5.22a.75.75 0 00-1.06 1.06L8.94 12l-5.72 5.72a.75.75 0 101.06 1.06L10 13.06l5.72 5.72a.75.75 0 101.06-1.06L11.06 12l5.72-5.72a.75.75 0 00-1.06-1.06L10 10.94 4.28 5.22z" clipRule="evenodd"/></svg>
+                      </button>
+                    </td>
+                  </tr>
+                  {ch.map(item=>{const pend=Math.max(0,item.cost-item.paid);const done=item.paid>=item.cost;const partial=item.paid>0&&item.paid<item.cost;
+                    return<tr key={item.id} draggable="true"
+                      className={`group grp-child ${done?'row-done':''} ${dragId===item.id?'dragging':''}`}
+                      onDragStart={e=>{setDragId(item.id);e.dataTransfer.effectAllowed='move'}}
+                      onDragEnd={()=>{setDragId(null);setDropTarget(null)}}
+                      onDragOver={e=>{e.preventDefault();setDropTarget({type:'item',id:item.id})}}
+                      onDragLeave={()=>setDropTarget(null)}
+                      onDrop={e=>{e.preventDefault();if(dragId&&dragId!==item.id){const tg=groupOfItem(item.id);if(tg)addToGroup(tg.id,dragId);else createGroup(item.id,dragId)}setDragId(null);setDropTarget(null)}}
+                      style={{borderBottom:'1px solid rgba(50,50,93,.06)',transition:'background .15s ease',
+                        background:dropTarget?.type==='item'&&dropTarget.id===item.id?'rgba(99,91,255,.06)':undefined}}>
+                      <td className="py-3.5 pl-2"><span className="drag-handle">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="3" r="1.2"/><circle cx="11" cy="3" r="1.2"/><circle cx="5" cy="8" r="1.2"/><circle cx="11" cy="8" r="1.2"/><circle cx="5" cy="13" r="1.2"/><circle cx="11" cy="13" r="1.2"/></svg>
+                      </span></td>
+                      <td className="py-3.5 pl-1 pr-3">
+                        <div className="flex items-center gap-2 grp-indent">
+                          {done&&<svg viewBox="0 0 20 20" fill="#0ea47a" className="w-[18px] h-[18px] shrink-0"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd"/></svg>}
+                          <div>
+                            <E value={item.name} onSave={v=>upd(item.id,'name',v)} cls={`font-medium text-[14px] ${done?'item-name':''}`} ph="Item name"/>
+                            {item.notes&&<span className="block text-[12px] mt-0.5 truncate max-w-xs" style={{color:'#8898aa'}}>{item.notes}</span>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-3 hidden sm:table-cell"><E value={item.cat} onSave={v=>upd(item.id,'cat',v)} type="select" options={CATS} render={v=><span className="text-[12px] font-medium px-2 py-0.5 rounded" style={{color:'#425466',backgroundColor:'#f0f2f5'}}>{v}</span>}/></td>
+                      <td className="text-right py-3.5 px-3"><E value={item.cost} onSave={v=>upd(item.id,'cost',v)} type="number" render={fmt} cls="tabular-nums" iCls="w-28 text-right"/></td>
+                      <td className="text-right py-3.5 px-3"><E value={item.paid} onSave={v=>upd(item.id,'paid',Math.min(v,item.cost))} type="number" render={v=><span style={{color:v>0?'#0ea47a':'#c1c9d2',fontWeight:v>0?500:400}}>{fmt(v)}</span>} cls="tabular-nums" iCls="w-28 text-right"/></td>
+                      <td className="text-right py-3.5 px-3 tabular-nums font-medium">{done?<span className="inline-flex items-center gap-1 text-[12px] font-semibold px-2.5 py-0.5 rounded-full" style={{color:'#0ea47a',backgroundColor:'#ecfdf5'}}>Cleared</span>:<span style={{color:partial?'#d97706':'#df1b41'}}>{fmt(pend)}</span>}</td>
+                      <td className="py-3.5 px-3 hidden lg:table-cell"><E value={item.src} onSave={v=>upd(item.id,'src',v)} type="select" options={SRCS} render={v=>v?<span className="text-[13px]" style={{color:'#8898aa'}}>{v}</span>:<span className="text-[13px]" style={{color:'#c1c9d2'}}>—</span>}/></td>
+                      <td className="py-3.5 pr-5 pl-3 text-right">
+                        <div className="flex items-center gap-1 justify-end">
+                          <button onClick={()=>removeFromGroup(g.id,item.id)} className="opacity-0 group-hover:opacity-100 focus:opacity-100" style={{color:'#c1c9d2',transition:'opacity .2s ease'}} title="Remove from group" aria-label={`Remove ${item.name} from group`}>
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/></svg>
+                          </button>
+                          {del===item.id
+                            ?<span className="inline-flex gap-1.5 text-[12px] whitespace-nowrap"><button onClick={()=>rm(item.id)} className="font-semibold" style={{color:'#df1b41'}}>Del?</button><span style={{color:'#c1c9d2'}}>/</span><button onClick={()=>setDel(null)} style={{color:'#8898aa'}}>No</button></span>
+                            :<button onClick={()=>setDel(item.id)} className="opacity-0 group-hover:opacity-100 focus:opacity-100" style={{color:'#c1c9d2',transition:'opacity .2s ease, color .15s ease'}} onMouseOver={e=>e.currentTarget.style.color='#df1b41'} onMouseOut={e=>e.currentTarget.style.color='#c1c9d2'} aria-label={`Delete ${item.name}`}>
+                              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/></svg>
+                            </button>}
+                        </div>
+                      </td>
+                    </tr>})}
+                </React.Fragment>
+              }
+              const item=row.item;const pend=Math.max(0,item.cost-item.paid);const done=item.paid>=item.cost;const partial=item.paid>0&&item.paid<item.cost;
+              return<tr key={item.id} draggable="true"
+                className={`group ${done?'row-done':'hover:bg-[#f6f9fc]'} ${dragId===item.id?'dragging':''}`}
+                onDragStart={e=>{setDragId(item.id);e.dataTransfer.effectAllowed='move'}}
+                onDragEnd={()=>{setDragId(null);setDropTarget(null)}}
+                onDragOver={e=>{e.preventDefault();setDropTarget({type:'item',id:item.id})}}
+                onDragLeave={()=>setDropTarget(null)}
+                onDrop={e=>{e.preventDefault();if(dragId&&dragId!==item.id){const tg=groupOfItem(item.id);if(tg)addToGroup(tg.id,dragId);else createGroup(item.id,dragId)}setDragId(null);setDropTarget(null)}}
+                style={{borderBottom:'1px solid rgba(50,50,93,.06)',transition:'background .15s ease',
+                  background:dropTarget?.type==='item'&&dropTarget.id===item.id?'rgba(99,91,255,.06)':undefined}}>
+                <td className="py-3.5 pl-2"><span className="drag-handle">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="3" r="1.2"/><circle cx="11" cy="3" r="1.2"/><circle cx="5" cy="8" r="1.2"/><circle cx="11" cy="8" r="1.2"/><circle cx="5" cy="13" r="1.2"/><circle cx="11" cy="13" r="1.2"/></svg>
+                </span></td>
+                <td className="py-3.5 pl-1 pr-3">
                   <div className="flex items-center gap-2">
                     {done&&<svg viewBox="0 0 20 20" fill="#0ea47a" className="w-[18px] h-[18px] shrink-0"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd"/></svg>}
                     <div>
@@ -551,9 +712,13 @@ function App(){
                   :<button onClick={()=>setDel(item.id)} className="opacity-0 group-hover:opacity-100 focus:opacity-100" style={{color:'#c1c9d2',transition:'opacity .2s ease, color .15s ease'}} onMouseOver={e=>e.currentTarget.style.color='#df1b41'} onMouseOut={e=>e.currentTarget.style.color='#c1c9d2'} aria-label={`Delete ${item.name}`}>
                     <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/></svg>
                   </button>}</td>
-              </tr>})}</tbody>
+              </tr>
+            })}
+            </tbody>
             <tfoot><tr className="font-semibold" style={{borderTop:'2px solid rgba(50,50,93,.1)',backgroundColor:'#fafbfc',color:'#0a2540'}}>
-              <td className="py-3 pl-5 pr-3" colSpan={2}>Total ({filtered.length})</td>
+              <td className="py-3 pl-2"></td>
+              <td className="py-3 pl-1 pr-3">Total ({filtered.length})</td>
+              <td className="hidden sm:table-cell"></td>
               <td className="text-right py-3 px-3 tabular-nums">{fmt(filtered.reduce((s,i)=>s+i.cost,0))}</td>
               <td className="text-right py-3 px-3 tabular-nums" style={{color:'#0ea47a'}}>{fmt(filtered.reduce((s,i)=>s+i.paid,0))}</td>
               <td className="text-right py-3 px-3 tabular-nums" style={{color:'#df1b41'}}>{fmt(filtered.reduce((s,i)=>s+Math.max(0,i.cost-i.paid),0))}</td>
@@ -562,7 +727,7 @@ function App(){
           </table>
         </div>
       </div>
-      <p className="text-[13px] text-center -mt-3" style={{color:'#c1c9d2'}}>Click any value to edit &middot; Press <kbd className="px-1.5 py-0.5 rounded text-[11px] font-medium" style={{backgroundColor:'#edf0f3',color:'#8898aa'}}>⌘K</kbd> or tap the mic to use voice commands</p>
+      <p className="text-[13px] text-center -mt-3" style={{color:'#c1c9d2'}}>Drag rows onto each other to group &middot; Click any value to edit &middot; <kbd className="px-1.5 py-0.5 rounded text-[11px] font-medium" style={{backgroundColor:'#edf0f3',color:'#8898aa'}}>⌘K</kbd> voice commands</p>
 
       {/* ═══ FINANCES ═══ */}
       <p className="text-[13px] font-semibold uppercase tracking-[0.1em] pt-2" style={{color:'#8898aa'}}>Cash Flow, Loans & Goals</p>
