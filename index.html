@@ -110,16 +110,51 @@ const CI={
   Other:'M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
 };
 
-/* ── 3D Icon Component ── */
+/* ── Apple iOS-style Icon Component ── */
 function D3({g,d,sz=52}){
-  const r=sz*.26,ic=sz*.44;
+  const r=sz*.2237,ic=sz*.46;
   return<div className="relative shrink-0" style={{width:sz,height:sz}}>
-    <div style={{position:'absolute',inset:0,borderRadius:r,background:`linear-gradient(145deg,${g[0]},${g[1]})`,boxShadow:`0 ${sz*.14}px ${sz*.28}px -${sz*.06}px ${g[1]}50, 0 ${sz*.04}px ${sz*.08}px rgba(0,0,0,0.1)`}}/>
-    <div style={{position:'absolute',top:0,left:0,right:0,height:'50%',borderRadius:`${r}px ${r}px 0 0`,background:'linear-gradient(180deg,rgba(255,255,255,0.35) 0%,rgba(255,255,255,0) 100%)'}}/>
-    <div className="absolute inset-0 flex items-center justify-center" style={{filter:'drop-shadow(0 1px 2px rgba(0,0,0,0.2))'}}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={{width:ic,height:ic}}>
+    <div style={{position:'absolute',inset:0,borderRadius:r,
+      background:`linear-gradient(160deg,${g[0]} 0%,${g[1]} 55%,${g[0]}dd 100%)`,
+      boxShadow:`0 ${sz*.18}px ${sz*.36}px -${sz*.06}px ${g[0]}55, 0 ${sz*.05}px ${sz*.1}px rgba(0,0,0,0.12), inset 0 1px 1px rgba(255,255,255,0.25), inset 0 -1px 1px rgba(0,0,0,0.12)`
+    }}/>
+    <div style={{position:'absolute',top:0,left:0,right:0,height:'44%',
+      borderRadius:`${r}px ${r}px ${r*.4}px ${r*.4}px`,
+      background:'linear-gradient(180deg,rgba(255,255,255,0.42) 0%,rgba(255,255,255,0.12) 50%,rgba(255,255,255,0) 100%)'
+    }}/>
+    <div style={{position:'absolute',inset:.5,borderRadius:r-.5,border:'0.5px solid rgba(255,255,255,0.2)',pointerEvents:'none'}}/>
+    <div className="absolute inset-0 flex items-center justify-center">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"
+        style={{width:ic,height:ic,filter:'drop-shadow(0 1px 2px rgba(0,0,0,0.3))'}}>
         {(Array.isArray(d)?d:[d]).map((p,i)=><path key={i} d={p}/>)}
       </svg>
+    </div>
+  </div>
+}
+
+/* ── Desk Calendar Countdown Widget ── */
+function Cal({days}){
+  return<div className="shrink-0 relative" style={{filter:'drop-shadow(0 14px 28px rgba(0,0,0,0.3))'}}>
+    <div className="absolute" style={{top:4,left:5,right:5,height:10,background:'rgba(255,255,255,0.06)',borderRadius:'12px 12px 0 0'}}/>
+    <div className="absolute" style={{top:2,left:2.5,right:2.5,height:10,background:'rgba(255,255,255,0.1)',borderRadius:'13px 13px 0 0'}}/>
+    <div className="relative overflow-hidden" style={{width:124,borderRadius:14,background:'white'}}>
+      <div className="flex justify-center gap-2.5 pt-[6px] pb-[5px]" style={{background:'#f7f8f9',borderBottom:'1px solid #eef0f2'}}>
+        {[0,1,2,3,4,5].map(i=><div key={i} className="rounded-full" style={{width:6,height:6,
+          background:'linear-gradient(145deg,#bfc4ca,#9ca3ab)',
+          boxShadow:'inset 0 1.5px 2px rgba(0,0,0,0.22), 0 0.5px 0 rgba(255,255,255,0.9)'
+        }}/>)}
+      </div>
+      <div className="flex items-center justify-center" style={{
+        padding:'6px 0',
+        background:'linear-gradient(135deg,#ff3b30 0%,#ff2d55 100%)',
+        boxShadow:'inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.08)'
+      }}>
+        <span style={{color:'white',fontSize:10.5,fontWeight:800,letterSpacing:'0.18em'}}>APR 2026</span>
+      </div>
+      <div className="flex flex-col items-center justify-center" style={{padding:'14px 0 16px',background:'linear-gradient(180deg,#ffffff 0%,#fafbfc 100%)'}}>
+        <span className="tabular-nums" style={{fontSize:48,fontWeight:900,color:'#0a2540',lineHeight:1,letterSpacing:'-0.02em'}}>{days}</span>
+        <span style={{fontSize:8,fontWeight:700,letterSpacing:'0.25em',color:'#9ca3af',marginTop:6}}>DAYS TO GO</span>
+      </div>
     </div>
   </div>
 }
@@ -371,10 +406,9 @@ function App(){
               </div>
             </div>
 
-            {/* Countdown */}
-            <div className="text-center shrink-0 sm:pl-10" style={{borderLeft:'1px solid rgba(255,255,255,0.08)'}}>
-              <p className="text-[52px] font-extrabold tabular-nums leading-none">{countdown}</p>
-              <p className="text-[10px] uppercase tracking-[0.15em] mt-2" style={{color:'rgba(255,255,255,0.25)'}}>days to wedding</p>
+            {/* Calendar Countdown */}
+            <div className="shrink-0 sm:pl-10 flex items-center" style={{borderLeft:'1px solid rgba(255,255,255,0.08)'}}>
+              <Cal days={countdown}/>
             </div>
           </div>
 
