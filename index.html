@@ -53,33 +53,34 @@ function useP(key,def){
 
 const CATS=['Housing','Food & Dining','Shopping','Health','Transport','Travel','Entertainment','Education','Gifts','Insurance','Investments','Subscriptions','Wedding','Home','Other'];
 const SRCS=['','Cash','UPI/GPay','Kotak Credit Card','HDFC Credit Card','Credit Card (Other)','Friend Loan (Nishal)','Bank Loan'];
+const DEF_LEDGERS=['Wedding','Monthly','One-time'];
 const SEED=[
-  {id:1,cat:'Wedding',name:'Wedding Saree + Dhaare Saree + Dhoties',cost:121485,paid:121485,src:'Kotak Credit Card',notes:''},
-  {id:2,cat:'Wedding',name:'Train Tickets to Kanchipuram',cost:15532,paid:15532,src:'Kotak Credit Card',notes:''},
-  {id:3,cat:'Wedding',name:'Food + Hotel in Kanchipuram',cost:7187,paid:7187,src:'UPI/GPay',notes:''},
-  {id:4,cat:'Wedding',name:'Sherwani',cost:18000,paid:18000,src:'HDFC Credit Card',notes:''},
-  {id:5,cat:'Wedding',name:'Mehendi Kurta with Shawl',cost:5900,paid:5900,src:'HDFC Credit Card',notes:''},
-  {id:6,cat:'Wedding',name:'Invitation Card & Prints',cost:9300,paid:9300,src:'Cash',notes:'Chickpet'},
-  {id:7,cat:'Wedding',name:"Father's Outfit",cost:9300,paid:9300,src:'Credit Card (Other)',notes:'Myntra'},
-  {id:8,cat:'Wedding',name:'Necklace for Deepthi',cost:267000,paid:267000,src:'Friend Loan (Nishal)',notes:'₹2.5L borrowed from Nishal'},
-  {id:9,cat:'Wedding',name:'House Painting',cost:134000,paid:134000,src:'Cash',notes:''},
-  {id:10,cat:'Wedding',name:'Reception Venue',cost:125000,paid:25000,src:'Cash',notes:'1000 chairs, 20 round tables, generator + dining'},
-  {id:11,cat:'Wedding',name:'Photography (Your Share)',cost:90000,paid:30000,src:'Cash',notes:'Split with Deepthi (90k each)'},
-  {id:12,cat:'Wedding',name:'Karimani',cost:326020,paid:26020,src:'Kotak Credit Card',notes:'Kalyan Jewellers'},
-  {id:13,cat:'Wedding',name:'Outfit for Hithesh',cost:50000,paid:0,src:'',notes:'Wedding + reception + mehendi + entrance'},
-  {id:14,cat:'Wedding',name:'Reception Catering',cost:300000,paid:0,src:'',notes:''},
-  {id:15,cat:'Wedding',name:'Decoration Expenses',cost:100000,paid:0,src:'',notes:''},
-  {id:16,cat:'Wedding',name:'Sound & Lighting',cost:50000,paid:0,src:'',notes:''},
-  {id:17,cat:'Wedding',name:'Drinks & Sound',cost:70000,paid:0,src:'',notes:''},
-  {id:18,cat:'Wedding',name:'Fish for Reception',cost:100000,paid:0,src:'',notes:''},
-  {id:19,cat:'Wedding',name:'Gift for Cousins',cost:20000,paid:0,src:'',notes:''},
-  {id:20,cat:'Wedding',name:"Mother's Reception Outfit",cost:10000,paid:0,src:'',notes:''},
-  {id:21,cat:'Wedding',name:'Tailoring for Others',cost:5000,paid:0,src:'',notes:''},
-  {id:22,cat:'Wedding',name:'Shoes',cost:4000,paid:0,src:'',notes:''},
-  {id:23,cat:'Wedding',name:'Kurta',cost:5000,paid:0,src:'',notes:''},
-  {id:24,cat:'Wedding',name:'Mehendi Stage',cost:20000,paid:0,src:'',notes:''},
-  {id:25,cat:'Wedding',name:'Catering on Mehendi',cost:40000,paid:0,src:'',notes:''},
-  {id:26,cat:'Wedding',name:'Platinum Ring',cost:60000,paid:0,src:'',notes:''},
+  {id:1,cat:'Wedding',name:'Wedding Saree + Dhaare Saree + Dhoties',cost:121485,paid:121485,src:'Kotak Credit Card',notes:'',ledger:'Wedding'},
+  {id:2,cat:'Wedding',name:'Train Tickets to Kanchipuram',cost:15532,paid:15532,src:'Kotak Credit Card',notes:'',ledger:'Wedding'},
+  {id:3,cat:'Wedding',name:'Food + Hotel in Kanchipuram',cost:7187,paid:7187,src:'UPI/GPay',notes:'',ledger:'Wedding'},
+  {id:4,cat:'Wedding',name:'Sherwani',cost:18000,paid:18000,src:'HDFC Credit Card',notes:'',ledger:'Wedding'},
+  {id:5,cat:'Wedding',name:'Mehendi Kurta with Shawl',cost:5900,paid:5900,src:'HDFC Credit Card',notes:'',ledger:'Wedding'},
+  {id:6,cat:'Wedding',name:'Invitation Card & Prints',cost:9300,paid:9300,src:'Cash',notes:'Chickpet',ledger:'Wedding'},
+  {id:7,cat:'Wedding',name:"Father's Outfit",cost:9300,paid:9300,src:'Credit Card (Other)',notes:'Myntra',ledger:'Wedding'},
+  {id:8,cat:'Wedding',name:'Necklace for Deepthi',cost:267000,paid:267000,src:'Friend Loan (Nishal)',notes:'₹2.5L borrowed from Nishal',ledger:'Wedding'},
+  {id:9,cat:'Wedding',name:'House Painting',cost:134000,paid:134000,src:'Cash',notes:'',ledger:'Wedding'},
+  {id:10,cat:'Wedding',name:'Reception Venue',cost:125000,paid:25000,src:'Cash',notes:'1000 chairs, 20 round tables, generator + dining',ledger:'Wedding'},
+  {id:11,cat:'Wedding',name:'Photography (Your Share)',cost:90000,paid:30000,src:'Cash',notes:'Split with Deepthi (90k each)',ledger:'Wedding'},
+  {id:12,cat:'Wedding',name:'Karimani',cost:326020,paid:26020,src:'Kotak Credit Card',notes:'Kalyan Jewellers',ledger:'Wedding'},
+  {id:13,cat:'Wedding',name:'Outfit for Hithesh',cost:50000,paid:0,src:'',notes:'Wedding + reception + mehendi + entrance',ledger:'Wedding'},
+  {id:14,cat:'Wedding',name:'Reception Catering',cost:300000,paid:0,src:'',notes:'',ledger:'Wedding'},
+  {id:15,cat:'Wedding',name:'Decoration Expenses',cost:100000,paid:0,src:'',notes:'',ledger:'Wedding'},
+  {id:16,cat:'Wedding',name:'Sound & Lighting',cost:50000,paid:0,src:'',notes:'',ledger:'Wedding'},
+  {id:17,cat:'Wedding',name:'Drinks & Sound',cost:70000,paid:0,src:'',notes:'',ledger:'Wedding'},
+  {id:18,cat:'Wedding',name:'Fish for Reception',cost:100000,paid:0,src:'',notes:'',ledger:'Wedding'},
+  {id:19,cat:'Wedding',name:'Gift for Cousins',cost:20000,paid:0,src:'',notes:'',ledger:'Wedding'},
+  {id:20,cat:'Wedding',name:"Mother's Reception Outfit",cost:10000,paid:0,src:'',notes:'',ledger:'Wedding'},
+  {id:21,cat:'Wedding',name:'Tailoring for Others',cost:5000,paid:0,src:'',notes:'',ledger:'Wedding'},
+  {id:22,cat:'Wedding',name:'Shoes',cost:4000,paid:0,src:'',notes:'',ledger:'Wedding'},
+  {id:23,cat:'Wedding',name:'Kurta',cost:5000,paid:0,src:'',notes:'',ledger:'Wedding'},
+  {id:24,cat:'Wedding',name:'Mehendi Stage',cost:20000,paid:0,src:'',notes:'',ledger:'Wedding'},
+  {id:25,cat:'Wedding',name:'Catering on Mehendi',cost:40000,paid:0,src:'',notes:'',ledger:'Wedding'},
+  {id:26,cat:'Wedding',name:'Platinum Ring',cost:60000,paid:0,src:'',notes:'',ledger:'Wedding'},
 ];
 
 function fmt(n){if(n==null||isNaN(n))return'₹0';const neg=n<0;const a=Math.abs(Math.round(n)).toString();let r='';if(a.length<=3)r=a;else{r=a.slice(-3);let x=a.slice(0,-3);while(x.length>2){r=x.slice(-2)+','+r;x=x.slice(0,-2)}if(x.length)r=x+','+r}return(neg?'-₹':'₹')+r}
@@ -236,10 +237,19 @@ function parseCmd(raw){
 
 function App(){
   const[items,setItems]=useP('items',SEED);
+  const[ledgers,setLedgers]=useP('ledgers',DEF_LEDGERS);
+  const[activeLedger,setActiveLedger]=useState(()=>{ try{const s=localStorage.getItem(V+'_activeLedger');return s?JSON.parse(s):DEF_LEDGERS[0]}catch(e){return DEF_LEDGERS[0]} });
+  useEffect(()=>{try{localStorage.setItem(V+'_activeLedger',JSON.stringify(activeLedger))}catch(e){}},[activeLedger]);
   const[filter,setFilter]=useState('all');
   const[showAdd,setShowAdd]=useState(false);
   const[del,setDel]=useState(null);
   const[nw,setNw]=useState({name:'',cost:'',paid:'',cat:'Other',src:''});
+  const[showLedgerAdd,setShowLedgerAdd]=useState(false);
+  const[ledgerInput,setLedgerInput]=useState('');
+  const[editLedger,setEditLedger]=useState(null);
+  const[editLedgerName,setEditLedgerName]=useState('');
+  const ledgerAddRef=useRef(null);
+  const ledgerEditRef=useRef(null);
   
   const addRef=useRef(null);
   const[cf,setCf]=useP('cf',{income:180000,rent:17500,sendHome:10000,homeLoanEmi:16000,living:30000,sip:22000});
@@ -269,7 +279,11 @@ function App(){
 
   const upd=(id,k,v)=>setItems(p=>p.map(i=>i.id===id?{...i,[k]:v}:i));
   const rm=id=>{const itm=items.find(i=>i.id===id);setItems(p=>p.filter(i=>i.id!==id).map(i=>i.parentId===id?{...i,parentId:null}:i));setDel(null);if(itm)toast(`"${itm.name}" removed`,'remove')};
-  const add=()=>{if(!nw.name.trim()||!nw.cost)return;const id=Math.max(0,...items.map(i=>i.id))+1;const name=nw.name.trim();setItems(p=>[...p,{id,cat:nw.cat,name,cost:Math.round(evalMath(nw.cost))||0,paid:Math.round(evalMath(nw.paid))||0,src:nw.src,notes:'',parentId:null}]);setNw({name:'',cost:'',paid:'',cat:'Other',src:''});setShowAdd(false);toast(`"${name}" added`,'add')};
+  const add=()=>{if(!nw.name.trim()||!nw.cost)return;const id=Math.max(0,...items.map(i=>i.id))+1;const name=nw.name.trim();setItems(p=>[...p,{id,cat:nw.cat,name,cost:Math.round(evalMath(nw.cost))||0,paid:Math.round(evalMath(nw.paid))||0,src:nw.src,notes:'',parentId:null,ledger:activeLedger}]);setNw({name:'',cost:'',paid:'',cat:'Other',src:''});setShowAdd(false);toast(`"${name}" added`,'add')};
+
+  const addLedger=()=>{const n=ledgerInput.trim();if(!n||ledgers.includes(n))return;setLedgers(p=>[...p,n]);setActiveLedger(n);setShowLedgerAdd(false);setLedgerInput('');toast(`"${n}" ledger created`,'add')};
+  const renameLedger=(old,nw)=>{if(!nw||nw===old||ledgers.includes(nw))return;setLedgers(p=>p.map(l=>l===old?nw:l));setItems(p=>p.map(i=>i.ledger===old?{...i,ledger:nw}:i));if(activeLedger===old)setActiveLedger(nw);setEditLedger(null);toast(`Renamed to "${nw}"`,'info')};
+  const removeLedger=name=>{if(ledgers.length<=1)return;const orphans=items.filter(i=>i.ledger===name);if(orphans.length>0&&!confirm(`Delete "${name}" ledger? Its ${orphans.length} items will move to "${ledgers.find(l=>l!==name)}".`))return;const target=ledgers.find(l=>l!==name);setLedgers(p=>p.filter(l=>l!==name));setItems(p=>p.map(i=>i.ledger===name?{...i,ledger:target}:i));if(activeLedger===name)setActiveLedger(target);toast(`"${name}" ledger removed`,'remove')};
 
   const childrenOf=pid=>items.filter(i=>i.parentId===pid);
   const hasChildren=pid=>items.some(i=>i.parentId===pid);
@@ -294,7 +308,7 @@ function App(){
   const japanMo=surplus>0?Math.ceil(japan/surplus):null;
   
 
-  const topLevel=useMemo(()=>items.filter(i=>!i.parentId),[items]);
+  const topLevel=useMemo(()=>items.filter(i=>!i.parentId&&i.ledger===activeLedger),[items,activeLedger]);
   const t=useMemo(()=>{
     const b=topLevel.reduce((s,i)=>s+i.cost,0);
     const p=topLevel.reduce((s,i)=>{const ch=childrenOf(i.id);return s+(ch.length>0?ch.reduce((a,c)=>a+c.paid,0):i.paid)},0);
@@ -305,21 +319,20 @@ function App(){
   const filtered=useMemo(()=>{if(filter==='all')return topLevel;return topLevel.filter(i=>{if(filter==='paid')return i.paid>=i.cost;if(filter==='partial')return i.paid>0&&i.paid<i.cost;if(filter==='pending')return i.paid===0})},[topLevel,filter]);
   const pct=t.b>0?t.p/t.b*100:0;
 
-  const exportCSV=()=>{const h='Item,Category,Cost,Paid,Pending,Source,Notes\n';const rows=items.map(i=>`"${i.name}","${i.cat}",${i.cost},${i.paid},${Math.max(0,i.cost-i.paid)},"${i.src}","${i.notes}"`).join('\n');const b=new Blob([h+rows],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='finance-planner.csv';a.click()};
+  const exportCSV=()=>{const h='Ledger,Item,Category,Cost,Paid,Pending,Source,Notes\n';const rows=items.map(i=>`"${i.ledger||''}","${i.name}","${i.cat}",${i.cost},${i.paid},${Math.max(0,i.cost-i.paid)},"${i.src}","${i.notes}"`).join('\n');const b=new Blob([h+rows],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='finance-planner.csv';a.click()};
 
   const exportJSON=()=>{
-    const data={items,cf,fl,bl,japan,exportedAt:new Date().toISOString()};
+    const data={items,ledgers,cf,fl,bl,japan,exportedAt:new Date().toISOString()};
     const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`finance-planner-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();
-    setShowDataMenu(false);
   };
   const importJSON=()=>{
     const inp=document.createElement('input');inp.type='file';inp.accept='.json';
     inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{
       try{
         const d=JSON.parse(ev.target.result);
-        if(d.items)setItems(d.items.map(i=>({...i,parentId:i.parentId||null})));if(d.cf)setCf(d.cf);if(d.fl)setFl(d.fl);if(d.bl)setBl(d.bl);if(d.japan!=null)setJapan(d.japan);
-        setShowDataMenu(false);alert('Data restored successfully');
+        if(d.items)setItems(d.items.map(i=>({...i,parentId:i.parentId||null,ledger:i.ledger||'Wedding'})));if(d.ledgers)setLedgers(d.ledgers);if(d.cf)setCf(d.cf);if(d.fl)setFl(d.fl);if(d.bl)setBl(d.bl);if(d.japan!=null)setJapan(d.japan);
+        alert('Data restored successfully');
       }catch(err){alert('Invalid backup file')}
     };r.readAsText(f)};inp.click();
   };
@@ -346,10 +359,13 @@ function App(){
       case'add':{
         if(!cmd.name)return{msg:"Couldn't parse item name",ok:false};
         const id=Math.max(0,...items.map(i=>i.id))+1;
-        const name=cmd.name.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
-        setItems(p=>[...p,{id,cat:cmd.cat||'Other',name,cost:cmd.cost||0,paid:0,src:'',notes:'',parentId:null}]);
-        toast(`"${name}" added`,'add');
-        return{msg:`Added "${name}" for ${fmt(cmd.cost||0)}`,ok:true};
+        let rawName=cmd.name;let targetLedger=activeLedger;
+        const ledgerMatch=ledgers.find(l=>rawName.toLowerCase().endsWith(' to '+l.toLowerCase()));
+        if(ledgerMatch){rawName=rawName.slice(0,-((' to '+ledgerMatch).length)).trim();targetLedger=ledgerMatch}
+        const name=rawName.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+        setItems(p=>[...p,{id,cat:cmd.cat||'Other',name,cost:cmd.cost||0,paid:0,src:'',notes:'',parentId:null,ledger:targetLedger}]);
+        toast(`"${name}" added to ${targetLedger}`,'add');
+        return{msg:`Added "${name}" for ${fmt(cmd.cost||0)} in ${targetLedger}`,ok:true};
       }
       case'paid':{
         const it=findItem(cmd.name);if(!it)return{msg:`Can't find "${cmd.name}"`,ok:false};
@@ -423,6 +439,7 @@ function App(){
   },[cmdOpen]);
 
   useEffect(()=>{try{localStorage.removeItem('wbp_v2_groups')}catch(e){}},[]);
+  useEffect(()=>{if(items.some(i=>!i.ledger)){setItems(p=>p.map(i=>i.ledger?i:{...i,ledger:ledgers[0]||'Wedding'}))}},[]);
   
 
   return<div className="min-h-screen">
@@ -461,6 +478,39 @@ function App(){
           </div>
         </div>
       </div>
+
+      {/* ═══ LEDGER TABS ═══ */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex items-center gap-1 flex-wrap">
+          {ledgers.map(l=><button key={l} onClick={()=>{setActiveLedger(l);setFilter('all')}}
+            onContextMenu={e=>{e.preventDefault();setEditLedger(l);setEditLedgerName(l);setTimeout(()=>ledgerEditRef.current?.focus(),60)}}
+            className="px-3 py-1.5 text-[13px] font-medium rounded-md transition relative"
+            style={activeLedger===l?{background:'#1a1f36',color:'#fff'}:{background:'#f0f2f5',color:'#697386'}}>
+            {l}
+            {activeLedger===l&&<span className="ml-1.5 text-[11px] tabular-nums" style={{opacity:.7}}>{topLevel.length}</span>}
+          </button>)}
+          {showLedgerAdd
+            ?<span className="inline-flex items-center gap-1 fade-in">
+              <input ref={ledgerAddRef} value={ledgerInput} onChange={e=>setLedgerInput(e.target.value)}
+                onKeyDown={e=>{if(e.key==='Enter')addLedger();if(e.key==='Escape'){setShowLedgerAdd(false);setLedgerInput('')}}}
+                placeholder="Ledger name" className="w-28 px-2 py-1 text-[13px] rounded-md focus:outline-none focus:ring-2 focus:ring-[#635bff]/20 focus:border-[#635bff]" style={{border:'1px solid #d8dee4'}}/>
+              <button onClick={addLedger} className="text-[12px] font-medium px-2 py-1 rounded" style={{color:'#635bff',background:'#f5f3ff'}}>Add</button>
+              <button onClick={()=>{setShowLedgerAdd(false);setLedgerInput('')}} className="text-[12px] px-1" style={{color:'#a3acb9'}}>Cancel</button>
+            </span>
+            :<button onClick={()=>{setShowLedgerAdd(true);setTimeout(()=>ledgerAddRef.current?.focus(),60)}} className="px-2 py-1.5 text-[13px] rounded-md transition hover:bg-gray-50" style={{color:'#a3acb9',border:'1px dashed #e3e8ee'}}>+</button>}
+        </div>
+      </div>
+
+      {/* ═══ LEDGER RENAME MODAL ═══ */}
+      {editLedger&&<div className="mb-4 p-3 rounded-md flex items-center gap-3 fade-in" style={{border:'1px solid #e3e8ee',background:'#fafbfc'}}>
+        <span className="text-[12px] font-medium" style={{color:'#8792a2'}}>Rename:</span>
+        <input ref={ledgerEditRef} value={editLedgerName} onChange={e=>setEditLedgerName(e.target.value)}
+          onKeyDown={e=>{if(e.key==='Enter')renameLedger(editLedger,editLedgerName.trim());if(e.key==='Escape')setEditLedger(null)}}
+          className="w-36 px-2 py-1 text-[13px] rounded focus:outline-none focus:ring-2 focus:ring-[#635bff]/20" style={{border:'1px solid #d8dee4'}}/>
+        <button onClick={()=>renameLedger(editLedger,editLedgerName.trim())} className="text-[12px] font-medium px-2 py-1 rounded" style={{color:'#635bff',background:'#f5f3ff'}}>Save</button>
+        {ledgers.length>1&&<button onClick={()=>{removeLedger(editLedger);setEditLedger(null)}} className="text-[12px] font-medium px-2 py-1 rounded" style={{color:'#e56f4a'}}>Delete ledger</button>}
+        <button onClick={()=>setEditLedger(null)} className="text-[12px] px-1" style={{color:'#a3acb9'}}>Cancel</button>
+      </div>}
 
       {/* ═══ FILTER TABS + ADD ═══ */}
       <div className="flex items-center justify-between mb-4">
